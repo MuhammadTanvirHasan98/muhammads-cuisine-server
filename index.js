@@ -38,7 +38,23 @@ async function run() {
 
 
     const galleryCollection = client.db("muhammadCuisine").collection("gallery");
+    const allFoodsCollection = client.db("muhammadCuisine").collection("allFoods");
 
+
+    // get all cards data of gallery from database
+    app.get('/allFoods', async(req,res)=>{
+
+       const sort = req.query.sort
+       console.log(sort);
+       let options = {}
+       if(sort){
+         options = {
+          sort:{purchase_count: -1 }  
+        }
+       }
+       const result = await allFoodsCollection.find({},options).toArray();
+       res.send(result);
+    })
 
     // get all cards data of gallery from database
     app.get('/gallery', async(req,res)=>{
