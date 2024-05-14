@@ -1,9 +1,22 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const express = require('express')
+const cors = require('cors');
 require('dotenv').config()
 
 const app = express()
 const port = process.env.PORT || 3000 ;
+
+
+// cors options
+const corsOptions = {
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  credentials: true,
+  optionSuccessStatus: 200,
+};
+
+// middleware 
+app.use(cors(corsOptions));
+app.use(express.json());
 
 
 
@@ -23,6 +36,17 @@ async function run() {
   try {
 
     
+
+
+    const galleryCollection = client.db("muhammadCuisine").collection("gallery");
+
+
+    // get all cards data of gallery from database
+    app.get('/gallery', async(req,res)=>{
+       const result = await galleryCollection.find().toArray();
+      //  console.log(result)
+       res.send(result);
+    })
 
     
     // Send a ping to confirm a successful connection
