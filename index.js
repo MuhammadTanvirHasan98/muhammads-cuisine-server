@@ -20,7 +20,6 @@ app.use(express.json());
 
 
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@muhammadcluster.h7migjc.mongodb.net/?retryWrites=true&w=majority&appName=MuhammadCluster`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -48,6 +47,13 @@ async function run() {
        res.send(result);
     })
 
+
+    // put user feedback to gallery collection in database
+    app.post('/gallery', async(req,res)=>{
+       const cardInfo = req.body;
+       const result = await galleryCollection.insertOne(cardInfo);
+       res.send(result);
+    })
     
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
