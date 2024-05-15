@@ -44,7 +44,15 @@ async function run() {
 
     // get all cards data of gallery from database
     app.get('/allFoods', async(req,res)=>{
-  
+       
+      const search = req.query.search;
+      console.log(search);
+      let query ={};
+      if(search){
+         query = {
+           food_name: {$regex: search, $options:'i'}
+         }
+      }
       // sorting to find top selling foods
        const sort = req.query.sort
        console.log(sort);
@@ -54,7 +62,7 @@ async function run() {
           sort:{purchase_count: -1 }  
         }
        }
-       const result = await allFoodsCollection.find({},options).toArray();
+       const result = await allFoodsCollection.find(query,options).toArray();
        res.send(result);
     })
 
