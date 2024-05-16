@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
 const cors = require('cors');
 require('dotenv').config()
@@ -46,7 +46,7 @@ async function run() {
     app.get('/allFoods', async(req,res)=>{
        
       const search = req.query.search;
-      console.log(search);
+      // console.log(search);
       let query ={};
       if(search){
          query = {
@@ -55,7 +55,7 @@ async function run() {
       }
       // sorting to find top selling foods
        const sort = req.query.sort
-       console.log(sort);
+      //  console.log(sort);
        let options = {}
        if(sort){
          options = {
@@ -65,6 +65,16 @@ async function run() {
        const result = await allFoodsCollection.find(query,options).toArray();
        res.send(result);
     })
+
+    
+    // get single food item data from database
+    app.get('/food/:id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await allFoodsCollection.findOne(query)
+      res.send(result);
+   })
+
 
     // get all cards data of gallery from database
     app.get('/gallery', async(req,res)=>{
@@ -78,6 +88,16 @@ async function run() {
        const result = await reviewsCollection.find().toArray();
        res.send(result);
     })
+
+
+    // put user feedback to gallery collection in database
+    app.post('/addFood', async(req,res)=>{
+       const newFood = req.body;
+       console.log(newFood)
+       const result = await allFoodsCollection.insertOne(newFood);
+       res.send(result);
+    })
+    
 
 
     // put user feedback to gallery collection in database
