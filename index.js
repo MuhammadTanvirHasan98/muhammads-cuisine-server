@@ -2,6 +2,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
 const cors = require('cors');
 require('dotenv').config()
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 const app = express()
 const port = process.env.PORT || 3000 ;
@@ -17,6 +19,27 @@ const corsOptions = {
 // middleware 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
+
+
+// verify token
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+
+  if (!token) return res.status(401).send({ message: "unauthorized access!" });
+
+  if (token) {
+    jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+      if (err) {
+        console.log(err);
+        return res.status(401).send({ message: "unauthorized access!" });
+      }
+      console.log(decoded);
+      req.user = decoded;
+      next();
+    });
+  }
+};
 
 
 
@@ -41,6 +64,37 @@ async function run() {
     const purchaseFoodCollection = client.db("muhammadCuisine").collection("purchaseFoods");
     const galleryCollection = client.db("muhammadCuisine").collection("gallery");
     const reviewsCollection = client.db("muhammadCuisine").collection("userReviews");
+
+
+   
+       //generate jwt to verify user
+       app.post("/jwt", async (req, res) => {
+        const user = req.body;
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
+          expiresIn: "60days",
+        });
+  
+        res
+          .cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          })
+          .send({ success: true });
+      });
+  
+      //to remove token when user logout
+      app.get("/logOut", async (req, res) => {
+        res
+          .clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+            maxAge: 0,
+          })
+          .send({ success: true });
+      });
+
 
 
     // get all cards data of gallery from database
@@ -76,10 +130,35 @@ async function run() {
       res.send(result);
    })
 
+
     // get single purchased food item data from database
-    app.get('/purchasedFoods/:email', async(req,res)=>{
+    app.get('/addedFoods/:email',verifyToken, async(req,res)=>{
       const email = req.params.email;
-      console.log(email);
+
+      const tokenEmail = req?.user?.email;
+      console.log("Email from verified token->", tokenEmail);
+
+      if (tokenEmail !== email)
+        return res.status(403).send({ message: "forbidden access!" });
+
+      const query = { 'made_by.email' : email}
+      const result = await allFoodsCollection.find(query).toArray();
+      res.send(result);
+   })
+
+
+
+    // get single purchased food item data from database
+    app.get('/purchasedFoods/:email',verifyToken, async(req,res)=>{
+      const email = req.params.email;
+
+      const tokenEmail = req?.user?.email;
+      console.log("Email from verified token->", tokenEmail);
+
+      if (tokenEmail !== email)
+        return res.status(403).send({ message: "forbidden access!" });
+     
+      
       const query = { buyer_email: email}
       const result = await purchaseFoodCollection.find(query).toArray();
       res.send(result);
@@ -105,6 +184,22 @@ async function run() {
        const newFood = req.body;
        console.log(newFood)
        const result = await allFoodsCollection.insertOne(newFood);
+       res.send(result);
+    })
+
+    // update user's food item to allFoods collection in database
+    app.post('/updateFood/:id', async(req,res)=>{
+
+       const id = req.params.id;
+       const updateFood = req.body;
+       const query = { _id: new ObjectId(id) };
+       const updateDoc = {
+         $set: {
+           ...updateFood,
+         },
+       };
+       const options = { upsert: true };
+       const result = await allFoodsCollection.updateOne(query, updateDoc, options);
        res.send(result);
     })
     
