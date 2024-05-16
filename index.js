@@ -76,6 +76,15 @@ async function run() {
       res.send(result);
    })
 
+    // get single purchased food item data from database
+    app.get('/purchasedFoods/:email', async(req,res)=>{
+      const email = req.params.email;
+      console.log(email);
+      const query = { buyer_email: email}
+      const result = await purchaseFoodCollection.find(query).toArray();
+      res.send(result);
+   })
+
 
     // get all cards data of gallery from database
     app.get('/gallery', async(req,res)=>{
@@ -113,7 +122,7 @@ async function run() {
       const purchaseFood = req.body;
        console.log(purchaseFood)
        const result = await purchaseFoodCollection.insertOne(purchaseFood);
-       
+
        const updateCount =   await allFoodsCollection.updateOne(query,options)
        console.log(updateCount)
        res.send(result);
@@ -126,6 +135,17 @@ async function run() {
        const cardInfo = req.body;
        const result = await galleryCollection.insertOne(cardInfo);
        res.send(result);
+    })
+
+
+
+    // Delete purchase food item from database
+    app.delete('/deletePurchasedFood/:id', async(req, res)=>{
+        const id = req.params.id;
+        console.log(id);
+        const query = {_id: new ObjectId(id)}
+        const result = await purchaseFoodCollection.deleteOne(query);
+        res.send(result);
     })
     
     // Send a ping to confirm a successful connection
