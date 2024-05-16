@@ -37,8 +37,9 @@ async function run() {
     
 
 
-    const galleryCollection = client.db("muhammadCuisine").collection("gallery");
     const allFoodsCollection = client.db("muhammadCuisine").collection("allFoods");
+    const purchaseFoodCollection = client.db("muhammadCuisine").collection("purchaseFoods");
+    const galleryCollection = client.db("muhammadCuisine").collection("gallery");
     const reviewsCollection = client.db("muhammadCuisine").collection("userReviews");
 
 
@@ -90,11 +91,31 @@ async function run() {
     })
 
 
-    // put user feedback to gallery collection in database
+    // put user's food item to allFoods collection in database
     app.post('/addFood', async(req,res)=>{
        const newFood = req.body;
        console.log(newFood)
        const result = await allFoodsCollection.insertOne(newFood);
+       res.send(result);
+    })
+    
+    // put user purchase food item to purchaseFoodCollection  in database
+    app.post('/addPurchaseFood', async(req,res)=>{
+      const  id = req.query.id
+      const purchase_quantity =parseInt(req.query.quantity);
+       console.log( purchase_quantity)
+
+      const query = {_id: new ObjectId(id)}
+      const options = {
+         $inc: { quantity: -purchase_quantity, purchase_count: 1 }
+      }
+      console.log(options);
+      const purchaseFood = req.body;
+       console.log(purchaseFood)
+       const result = await purchaseFoodCollection.insertOne(purchaseFood);
+       
+       const updateCount =   await allFoodsCollection.updateOne(query,options)
+       console.log(updateCount)
        res.send(result);
     })
     
